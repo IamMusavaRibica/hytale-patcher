@@ -82,9 +82,30 @@ def download_server_jar(out_path: Path):
         wget.download("https://cdn.ribica.dev/minigui.jar", out=str(out_path))
 
 
+def decompile(jar_in: Path, out_dir: Path):
+    if not jar_in.is_file():
+        raise ValueError("Input jar does not exist")
+    if not out_dir.is_dir():
+        raise ValueError("Output directory does not exist")
+
+    # Vineflower equivalent options:
+    # --decompile-generics=true --hide-default-constructor=false --remove-bridge=false --ascii-strings=true --use-lvt-names=true
+    subprocess.run([
+        "java", "-jar", str(Constants.TOOLS_DIR / "fernflower.jar"),
+        *"-dgs=1 -hdc=0 -rbr=0 -asc=1 -udv=1".split(),
+        str(jar_in),
+        str(out_dir)
+    ], check=True, stdout=subprocess.DEVNULL)
+
+    out_jar = out_dir / jar_in.name  # Fernflower outputs a jar with source files inside
+    subprocess.run(["jar", "xf", str(out_jar)], cwd=str(out_dir), check=True)
+    out_jar.unlink()
+
 
 if __name__ == "__main__":
     pre_init()
 
     jar_path = Constants.DOWNLOADS_DIR / "minigui.jar"
     download_server_jar(jar_path)
+
+    decompile(jar_path, Constants.DECOMPILE_DIR)
