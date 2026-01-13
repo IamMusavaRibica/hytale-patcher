@@ -71,15 +71,17 @@ def decompile(jar_in: Path, out_dir: Path):
     if not out_dir.is_dir():
         raise ValueError("Output directory does not exist")
 
+    logger.info("Decompiling {} to {}...", jar_in, out_dir)
     # Vineflower equivalent options:
     # --decompile-generics=true --hide-default-constructor=false --remove-bridge=false --ascii-strings=true --use-lvt-names=true
     subprocess.run([
         "java", "-jar", str(Constants.TOOLS_DIR / "fernflower.jar"),
-        *"-dgs=1 -hdc=0 -rbr=0 -asc=1 -udv=1".split(),
+        *"-dgs=1 -hdc=0 -rbr=0 -asc=1 -udv=1 -log=WARN".split(),
         str(jar_in),
         str(out_dir)
-    ], check=True, stdout=subprocess.DEVNULL)
+    ], check=True)
 
+    logger.info("Extracting decompiled sources...")
     out_jar = out_dir / jar_in.name  # Fernflower outputs a jar with source files inside
     subprocess.run(["jar", "xf", str(out_jar)], cwd=str(out_dir), check=True)
     out_jar.unlink()
